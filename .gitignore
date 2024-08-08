@@ -7,3 +7,4 @@ __pycache__/
 serviceAccountKey.json
 hello-world-b0740-67a1f70f7c51.json
 learn-anything-431809-ab5f545a36ca.json
+.streamlit\secrets.toml
