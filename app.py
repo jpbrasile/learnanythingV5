@@ -17,16 +17,40 @@ if 'user' not in st.session_state:
 if 'is_admin' not in st.session_state:
     st.session_state.is_admin = False
 
-# Initialiser Firebase
-if not firebase_admin._apps:
-    try:
-        #cred = credentials.Certificate("learn-anything-431809-ab5f545a36ca.json")
-        cred = credentials.Certificate("hello-world-b0740-67a1f70f7c51.json")
-        firebase_admin.initialize_app(cred)
-    except Exception as e:
-        st.error(f"Erreur lors de l'initialisation de Firebase : {str(e)}")
-        st.stop()
+# # Initialiser Firebase
+# if not firebase_admin._apps:
+#     try:
+#         #cred = credentials.Certificate("learn-anything-431809-ab5f545a36ca.json")
+#         cred = credentials.Certificate("hello-world-b0740-67a1f70f7c51.json")
+#         firebase_admin.initialize_app(cred)
+#     except Exception as e:
+#         st.error(f"Erreur lors de l'initialisation de Firebase : {str(e)}")
+#         st.stop()
 
+# db = firestore.client()
+
+# Function to initialize Firebase
+def initialize_firebase():
+    if not firebase_admin._apps:
+        try:
+            # Try to load Firebase credentials from the environment variable
+            firebase_credentials = os.getenv('FIREBASE_CREDENTIALS')
+            if firebase_credentials:
+                credentials_dict = json.loads(firebase_credentials)
+                cred = credentials.Certificate(credentials_dict)
+                firebase_admin.initialize_app(cred)
+            else:
+                # Fallback to loading from a JSON file
+                cred = credentials.Certificate("hello-world-b0740-67a1f70f7c51.json")
+                firebase_admin.initialize_app(cred)
+        except Exception as e:
+            st.error(f"Erreur lors de l'initialisation de Firebase : {str(e)}")
+            st.stop()
+
+# Initialize Firebase
+initialize_firebase()
+
+# Initialize Firestore DB
 db = firestore.client()
 
 # Fonction pour créer un nouvel utilisateur
