@@ -29,71 +29,31 @@ if 'is_admin' not in st.session_state:
 
 import streamlit as st
 import firebase_admin
-from firebase_admin import credentials
-import os
-import json
-import toml
+from firebase_admin import credentials, firestore
 
-def load_firebase_credentials():
-    credentials = None
-    source = None
+def initialize_firebase():
+    try:
+        # Check if the Firebase app is already initialized
+        if not firebase_admin._apps:
+            # Access the Firebase credentials from Streamlit secrets
+            firebase_creds = st.secrets.get("firebase")
+            if firebase_creds:
+                # Initialize Firebase with the credentials from secrets
+                cred = credentials.Certificate(firebase_creds)
+                firebase_admin.initialize_app(cred)
+            else:
+                # Fallback to loading from a local JSON file
+                cred = credentials.Certificate("hello-world-b0740-67a1f70f7c51.json")
+                firebase_admin.initialize_app(cred)
+    except Exception as e:
+        st.error(f"Error initializing Firebase: {str(e)}")
+        st.stop()
 
-    # 1. Check Streamlit secrets
-    if "firebase" in st.secrets:
-        st.write("Using Streamlit secrets for Firebase credentials.")
-        credentials = {
-            "type": st.secrets["firebase"]["type"],
-            "project_id": st.secrets["firebase"]["project_id"],
-            "private_key_id": st.secrets["firebase"]["private_key_id"],
-            "private_key": st.secrets["firebase"]["private_key"].replace("\\n", "\n"),
-            "client_email": st.secrets["firebase"]["client_email"],
-            "client_id": st.secrets["firebase"]["client_id"],
-            "auth_uri": st.secrets["firebase"]["auth_uri"],
-            "token_uri": st.secrets["firebase"]["token_uri"],
-            "auth_provider_x509_cert_url": st.secrets["firebase"]["auth_provider_x509_cert_url"],
-            "client_x509_cert_url": st.secrets["firebase"]["client_x509_cert_url"]
-        }
-        source = "Streamlit secrets"
-    else:
-        # 2. Check local secrets.toml file
-        toml_path = ".streamlit/secrets.toml"
-        if os.path.exists(toml_path):
-            st.write("Using local TOML file for Firebase credentials.")
-            with open(toml_path, "r") as toml_file:
-                toml_data = toml.load(toml_file)
-                if "firebase" in toml_data:
-                    credentials = toml_data["firebase"]
-                    credentials["private_key"] = credentials["private_key"].replace("\\n", "\n")
-                    source = "local TOML file"
-        
-        # 3. Check JSON file
-        if not credentials:
-            json_path = "hello-world-b0740-67a1f70f7c51.json"
-            if os.path.exists(json_path):
-                st.write("Using JSON file for Firebase credentials.")
-                with open(json_path, "r") as json_file:
-                    credentials = json.load(json_file)
-                    credentials["private_key"] = credentials["private_key"].replace("\\n", "\n")
-                    source = "JSON file"
-    
-    return credentials, source
+# Initialize Firebase
+initialize_firebase()
 
-def init_firebase():
-    # Check if the default app is already initialized
-    if not firebase_admin._apps:
-        credentials_data, source = load_firebase_credentials()
-        if credentials_data:
-            cred = credentials.Certificate(credentials_data)
-            firebase_admin.initialize_app(cred)
-            st.write(f"Firebase initialized successfully using {source}.")
-        else:
-            st.write("No Firebase credentials found.")
-    else:
-        st.write("Firebase app already initialized.")
-
-init_firebase()
-
-
+# Now you can use Firebase services
+db = firestore.client()
 
 # Fonction pour créer un nouvel utilisateur
 def create_user(email, password, is_admin=False):
