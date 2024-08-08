@@ -93,7 +93,7 @@ def init_firebase():
 
 init_firebase()
 
-
+db = firestore.client()
 
 # Fonction pour créer un nouvel utilisateur
 def create_user(email, password, is_admin=False):
