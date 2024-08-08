@@ -29,29 +29,42 @@ if 'is_admin' not in st.session_state:
 
 # db = firestore.client()
 
-# Function to initialize Firebase
-def initialize_firebase():
-    if not firebase_admin._apps:
-        try:
-            # Try to load Firebase credentials from the environment variable
-            firebase_credentials = os.getenv('FIREBASE_CREDENTIALS')
-            if firebase_credentials:
-                credentials_dict = json.loads(firebase_credentials)
-                cred = credentials.Certificate(credentials_dict)
-                firebase_admin.initialize_app(cred)
-            else:
-                # Fallback to loading from a JSON file
-                cred = credentials.Certificate("hello-world-b0740-67a1f70f7c51.json")
-                firebase_admin.initialize_app(cred)
-        except Exception as e:
-            st.error(f"Erreur lors de l'initialisation de Firebase : {str(e)}")
-            st.stop()
+import streamlit as st
+import firebase_admin
+from firebase_admin import credentials, firestore
+import json
+import os
+
+def load_firebase_credentials():
+    # Try to load from Streamlit secrets
+    try:
+        return st.secrets['firebase']
+    except KeyError:
+        pass
+    
+    # Try to load from JSON file
+    json_files = ["learn-anything-431809-ab5f545a36ca.json", "hello-world-b0740-67a1f70f7c51.json"]
+    for json_file in json_files:
+        if os.path.exists(json_file):
+            with open(json_file, 'r') as f:
+                return json.load(f)
+    
+    # If neither option works, raise an error
+    st.error("Firebase credentials not found in secrets or JSON files.")
+    st.stop()
 
 # Initialize Firebase
-initialize_firebase()
+if not firebase_admin._apps:
+    try:
+        cred_dict = load_firebase_credentials()
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        st.error(f"Error initializing Firebase: {str(e)}")
+        st.stop()
 
-# Initialize Firestore DB
 db = firestore.client()
+
 
 # Fonction pour créer un nouvel utilisateur
 def create_user(email, password, is_admin=False):
